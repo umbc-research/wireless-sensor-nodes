@@ -6,7 +6,7 @@
 //#include <DHT.h>
 
 // Set your Board ID (ESP32 Sender #1 = BOARD_ID 1, ESP32 Sender #2 = BOARD_ID 2, etc)
-#define BOARD_ID 2
+#define BOARD_ID 1
 
 /*
 // Digital pin connected to the DHT sensor

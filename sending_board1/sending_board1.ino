@@ -2,23 +2,10 @@
 #include <esp_wifi.h>
 #include <WiFi.h>
 #include <Adafruit_MLX90614.h>
-//#include <Adafruit_Sensor.h>
 //#include <DHT.h>
 
-// Set your Board ID (ESP32 Sender #1 = BOARD_ID 1, ESP32 Sender #2 = BOARD_ID 2, etc)
 #define BOARD_ID 1
 
-/*
-// Digital pin connected to the DHT sensor
-#define DHTPIN 4  
-
-// Uncomment the type of sensor in use:
-//#define DHTTYPE    DHT11     // DHT 11
-#define DHTTYPE    DHT22     // DHT 22 (AM2302)
-//#define DHTTYPE    DHT21     // DHT 21 (AM2301)
-
-DHT dht(DHTPIN, DHTTYPE);
-*/
 
 //MAC Address of the receiver dc:da:0c:21:6e:18
 
@@ -37,7 +24,6 @@ typedef struct struct_message {
 
 esp_now_peer_info_t peerInfo;
 
-//Create a struct_message called myData
 struct_message myData;
 
 unsigned long previousMillis = 0;   // Stores last time temperature was published
@@ -60,12 +46,7 @@ int32_t getWiFiChannel(const char *ssid) {
 }
 
 float readAmbientTemperature() {
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  // Read temperature as Celsius (the default)
   float ambient = mlx.readAmbientTempC();
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  //float t = dht.readTemperature(true);
-  // Check if any reads failed and exit early (to try again).
   if (isnan(ambient)) {    
     Serial.println("Failed to read from sensor!");
     return 0;
@@ -77,12 +58,7 @@ float readAmbientTemperature() {
 }
 
 float readObjectTemperature() {
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  // Read temperature as Celsius (the default)
   float object = mlx.readObjectTempC();
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  //float t = dht.readTemperature(true);
-  // Check if any reads failed and exit early (to try again).
   if (isnan(object)) {    
     Serial.println("Failed to read from sensor!");
     return 0;
@@ -94,7 +70,6 @@ float readObjectTemperature() {
 }
 
 
-// callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
@@ -115,11 +90,11 @@ void setup() {
 
   int32_t channel = getWiFiChannel(WIFI_SSID);
 
-  WiFi.printDiag(Serial); // Uncomment to verify channel number before
+  WiFi.printDiag(Serial);
   esp_wifi_set_promiscuous(true);
   esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
   esp_wifi_set_promiscuous(false);
-  WiFi.printDiag(Serial); // Uncomment to verify channel change after
+  WiFi.printDiag(Serial); 
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
@@ -127,15 +102,11 @@ void setup() {
     return;
   }
 
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
   esp_now_register_send_cb(OnDataSent);
   
-  // Register peer
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
   peerInfo.encrypt = false;
   
-  // Add peer        
   if (esp_now_add_peer(&peerInfo) != ESP_OK){
     Serial.println("Failed to add peer");
     return;
@@ -145,15 +116,12 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
-    // Save the last time a new reading was published
     previousMillis = currentMillis;
-    //Set values to send
     myData.id = BOARD_ID;
     myData.ambientTemp = readAmbientTemperature();
     myData.objectTemp = readObjectTemperature();
     myData.readingId = readingId++;
      
-    //Send message via ESP-NOW
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
     if (result == ESP_OK) {
       Serial.println("Sent with success");
