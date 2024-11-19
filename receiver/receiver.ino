@@ -6,7 +6,7 @@
 const char* ssid = "UMBC Visitor";
 const char* password = "";
 
-// Structure to receive data
+
 typedef struct struct_message {
   int id;
   float ambientTemp;
